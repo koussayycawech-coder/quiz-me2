@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>هل تعرفني؟</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+    padding: 50px;
+    overflow-x: hidden;
+}
+.container {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    margin: auto;
+    margin-bottom: 20px;
+}
+input {
+    padding: 10px;
+    width: 80%;
+    margin-top: 15px;
+    border-radius: 10px;
+    border: none;
+}
+button {
+    padding: 10px 20px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 10px;
+    background: purple;
+    color: white;
+    cursor: pointer;
+}
+.emoji {
+    position: absolute;
+    font-size: 2rem;
+    pointer-events: none;
+    animation: fall 3s linear forwards;
+}
+@keyframes fall {
+    0% { transform: translateY(0px) rotate(0deg);}
+    100% { transform: translateY(600px) rotate(360deg);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="start">
+    <h2>اكتب اسمك</h2>
+    <input id="username">
+    <br>
+    <button onclick="startGame()">ابدأ</button>
+</div>
+
+<div class="container" id="game" style="display:none;">
+    <h2 id="question"></h2>
+    <input id="answer">
+    <br>
+    <button onclick="checkAnswer()">تأكيد</button>
+    <p id="msg"></p>
+</div>
+
+<div class="container">
+    <h3>🏆 الفائزون</h3>
+    <ul id="winners"></ul>
+</div>
+
+<div class="container">
+    <h3>🏅 ليدر بورد</h3>
+    <ol id="leaderboard"></ol>
+</div>
+
+<audio id="laughSound" src="https://www.soundjay.com/human/laugh-01.mp3"></audio>
+
+<script>
+// ==================== Firebase ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyArP0yNUj4IUYKlKwI4pn6aBoGfMcV_BzM",
+  authDomain: "test-3b169.firebaseapp.com",
+  databaseURL: "https://test-3b169-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "test-3b169",
+  storageBucket: "test-3b169.firebasestorage.app",
+  messagingSenderId: "768937244206",
+  appId: "1:768937244206:web:abe3fa7dc60bc672c211bf"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ==================== Telegram ====================
+const BOT_TOKEN = "8680352789:AAGOX9X_tpYAoYIhOIWrLcsHQMqanBNwJac";
+const CHAT_ID = "7219163505";
+
+function sendTelegram(message){
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({chat_id: CHAT_ID, text: message})
+    });
+}
+
+// ==================== الأسئلة ====================
+const questions = [
+{q:"ما اسمي", a:["قصي"]},
+{q:"ما لقبي", a:["الشاوش"]},
+{q:"كم عمري", a:["15"]},
+{q:"شهر ميلادي", a:["اوت","8"]},
+{q:"يوم ميلادي", a:["15"]},
+{q:"اكلتي المفضلة (تطيب فالدار)", a:["طاجين"]},
+{q:"اكلتي المفضلة من المطاعم", a:["باقات"]},
+{q:"مشروبي المفضل", a:["بيبسي"]},
+{q:"لوني المفضل", a:["بنفسجي"]},
+{q:"لون عيني", a:["بني"]},
+{q:"لعبتي المفضلة", a:["ماينكرافت","ماين كرافت"]},
+{q:"فلمي امفضل", a:["breakingbad","breaking bad"]},
+{q:"انمي مفضل", a:["ونبيس","ون بيس"]},
+{q:"احسن صاحب", a:["مهيب"]},
+{q:"حبي من عامة الرابعة", a:["مريم"]},
+{q:"حبي من عامة ال6", a:["حنين"]},
+{q:"حبي من عامة ال7", a:["مرام"]},
+{q:"حبي من عامة ال8 و هيا جاي", a:["تيسير"]},
+{q:"اول طفلة حكيت معاها منن الكلاس", a:["مريم"]},
+{q:"حاجة نحبها", a:["برمجة"]},
+{q:"شنو تنتوجه", a:["اعلامية"]},
+{q:"لعبة صعيبة ختمتها", a:["هولونايت","هولو نايت"]},
+{q:"اكثر مادة نحبها بخلاف الانفو", a:["انقليزية"]},
+{q:"اكثر مادة نكرهها", a:["فرنسية","سيونس"]},
+{q:"حيوان نحبو", a:["ثعلب","الثعلب"]},
+{q:"حاجة عندي رهاب منها", a:["عناكب"]},
+{q:"حاجة تفرحني فيسع", a:["تليفون"]},
+{q:"رقمي المفضل", a:["7"]},
+{q:"اول حاجة ترانيتها", a:["كونغفو","كونغ فو"]},
+{q:"اكثر واحد نكرهو فالكلاس", a:["معتز","مؤمن"]}
+];
+
+let current = 0;
+let player = "";
+
+// ==================== الدوال ====================
+function normalize(text){ return text.toLowerCase().replace(/\s+/g,""); }
+
+function startGame(){
+    player = document.getElementById("username").value;
+    if(!player) return alert("اكتب اسمك");
+    document.getElementById("start").style.display="none";
+    document.getElementById("game").style.display="block";
+    loadQuestion();
+}
+
+function loadQuestion(){
+    document.getElementById("question").innerText = questions[current].q;
+    document.getElementById("answer").value="";
+    document.getElementById("msg").innerText="";
+}
+
+function showEmojis(){
+    const emojis = ["😂","🤣","😹","😆"];
+    const laughSound = document.getElementById("laughSound");
+    laughSound.currentTime = 0;
+    laughSound.play();
+    for(let i=0;i<20;i++){
+        let e = document.createElement("div");
+        e.className="emoji";
+        e.style.left = Math.random()*90 + "%";
+        e.innerText = emojis[Math.floor(Math.random()*emojis.length)];
+        document.body.appendChild(e);
+        setTimeout(()=> e.remove(),3000);
+    }
+}
+
+function checkAnswer(){
+    let rawAnswer = document.getElementById("answer").value;
+    let user = normalize(rawAnswer);
+
+    db.ref("logs").push({name: player, question: questions[current].q, answer: rawAnswer, time: Date.now()});
+    sendTelegram(`📩 محاولة جديدة
+👤 ${player}
+❓ ${questions[current].q}
+✏️ جوابه: ${rawAnswer}`);
+
+    let answers = questions[current].a.map(a=>normalize(a));
+
+    if(answers.includes(user)){
+        current++;
+
+        // تحديث أعلى score فقط
+        const scoreRef = db.ref("scores/" + player);
+        scoreRef.get().then(snapshot => {
+            let prevScore = snapshot.exists() ? snapshot.val().score : 0;
+            if(current > prevScore){
+                scoreRef.set({name: player, score: current});
+            }
+        });
+
+        sendTelegram(`✅ إجابة صحيحة!
+👤 ${player}
+✏️ كتب: ${rawAnswer}
+📊 السؤال رقم ${current}`);
+
+        if(current === questions.length){
+            db.ref("winners").push(player);
+            sendTelegram(`🏆 فاز!
+👤 ${player} خلص كل الأسئلة 🔥`);
+            showEmojis();
+            document.body.innerHTML = "<h2>يعني عرفت عليا هذا الكل و معرفتش شكون نحب؟ 🤣</h2>";
+        } else {
+            loadQuestion();
+        }
+
+    } else {
+        current = 0;
+        document.getElementById("msg").innerText = "❌ غلط! رجعت من الأول";
+        sendTelegram(`❌ إجابة غلط!
+👤 ${player}
+✏️ كتب: ${rawAnswer}
+🔁 رجع للبداية`);
+        showEmojis();
+        setTimeout(loadQuestion,1500);
+    }
+}
+
+// ==================== عرض الفائزين ====================
+db.ref("winners").on("value", snap=>{
+    let data = snap.val();
+    let list = document.getElementById("winners");
+    list.innerHTML="";
+    for(let id in data){
+        let li = document.createElement("li");
+        li.innerText = data[id];
+        list.appendChild(li);
+    }
+});
+
+// ==================== عرض Leaderboard ====================
+db.ref("scores").orderByChild("score").on("value", snap=>{
+    let data = snap.val();
+    let list = document.getElementById("leaderboard");
+    list.innerHTML="";
+    let sorted = [];
+    for(let key in data){
+        if(data[key] && data[key].name !== undefined && data[key].score !== undefined){
+            sorted.push(data[key]);
+        }
+    }
+    sorted.sort((a,b)=>b.score - a.score);
+    sorted.forEach(p=>{
+        let li = document.createElement("li");
+        li.innerText = `${p.name} - ${p.score} سؤال`;
+        list.appendChild(li);
+    });
+});
+
+// ==================== Enter لتأكيد الإجابة ====================
+document.addEventListener("keyup", function(e){
+    if(e.key === "Enter"){
+        checkAnswer();
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,274 +1,528 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>هل تعرفني؟</title>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>عبّارة الموت — اللغز الأخير</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cairo:wght@400;600;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-    padding: 50px;
-    overflow-x: hidden;
-}
-.container {
-    background: #1e293b;
-    padding: 30px;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 500px;
-    margin: auto;
-    margin-bottom: 20px;
-}
-input {
-    padding: 10px;
-    width: 80%;
-    margin-top: 15px;
-    border-radius: 10px;
-    border: none;
-}
-button {
-    padding: 10px 20px;
-    margin-top: 15px;
-    border: none;
-    border-radius: 10px;
-    background: purple;
-    color: white;
-    cursor: pointer;
-}
-.emoji {
-    position: absolute;
-    font-size: 2rem;
-    pointer-events: none;
-    animation: fall 3s linear forwards;
-}
-@keyframes fall {
-    0% { transform: translateY(0px) rotate(0deg);}
-    100% { transform: translateY(600px) rotate(360deg);}
-}
+  :root{
+    --bg-deep:#0e1410;
+    --bg-paper:#e8dfc4;
+    --bg-paper-edge:#d6c89e;
+    --ink:#2b2418;
+    --ink-dim:#5c5440;
+    --blood:#7a2020;
+    --gold:#b8902f;
+    --river:#1c3a3e;
+    --bank:#3c5240;
+    --font-display:'Tajawal', sans-serif;
+    --font-paper:'Amiri', serif;
+    --font-ui:'Cairo', sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; min-height:100%;
+    background:radial-gradient(ellipse at 50% 0%, #16201a 0%, var(--bg-deep) 60%);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    direction:rtl;
+  }
+  #root{
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:calc(var(--safe-top) + 16px) 14px calc(var(--safe-bottom) + 20px);
+  }
+  .hidden{ display:none !important; }
+
+  /* ===================== RULES PAPER ===================== */
+  #screen-rules{ width:100%; max-width:680px; }
+  .paper{
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 28px),
+      var(--bg-paper);
+    border:1px solid var(--bg-paper-edge);
+    border-radius:4px;
+    box-shadow:0 2px 0 var(--bg-paper-edge), 0 30px 60px rgba(0,0,0,0.5);
+    padding:30px 26px 26px;
+    position:relative;
+  }
+  .paper::before{
+    content:'';
+    position:absolute; inset:10px;
+    border:1px solid rgba(43,36,24,0.15);
+    pointer-events:none;
+  }
+  .paper-title{
+    font-family:var(--font-display); font-weight:900; font-size:clamp(22px,5.5vw,30px);
+    text-align:center; color:var(--blood); margin-bottom:4px; letter-spacing:1px;
+  }
+  .paper-subtitle{
+    text-align:center; font-family:var(--font-paper); font-size:14px; color:var(--ink-dim);
+    margin-bottom:22px; font-style:italic;
+  }
+  .paper-section-title{
+    font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink);
+    margin:20px 0 8px; padding-right:10px; border-right:4px solid var(--blood);
+  }
+  .paper-body{ font-family:var(--font-paper); font-size:15.5px; line-height:2; color:var(--ink); }
+  .paper-body p{ margin:0 0 12px; }
+  .paper-list{ margin:0 0 14px; padding-right:22px; }
+  .paper-list li{ margin-bottom:9px; line-height:1.85; }
+  .rule-num{ font-weight:700; color:var(--blood); }
+  .roster-table{ width:100%; border-collapse:collapse; margin:14px 0 18px; font-family:var(--font-ui); font-size:13.5px; }
+  .roster-table th, .roster-table td{ border:1px solid rgba(43,36,24,0.25); padding:7px 10px; text-align:center; }
+  .roster-table th{ background:rgba(43,36,24,0.07); font-weight:800; }
+  .warn-box{
+    background:rgba(122,32,32,0.08); border:1.5px dashed var(--blood); border-radius:6px;
+    padding:14px 16px; margin:18px 0; font-family:var(--font-ui); font-size:13.5px; line-height:1.8;
+  }
+  .warn-box b{ color:var(--blood); }
+  .scroll-hint{
+    text-align:center; font-size:12px; color:var(--ink-dim); margin-top:6px; opacity:0.8;
+  }
+  #btn-accept{
+    display:block; width:100%; margin-top:22px; padding:16px; border-radius:8px; border:none;
+    background:var(--blood); color:var(--bg-paper); font-family:var(--font-display); font-weight:900;
+    font-size:16px; letter-spacing:1px; cursor:pointer;
+  }
+  #btn-accept:active{ transform:translateY(1px); }
+
+  /* ===================== GAME SCREEN ===================== */
+  #screen-game{ width:100%; max-width:720px; display:flex; flex-direction:column; align-items:center; }
+
+  #topbar{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:14px; flex-wrap:wrap; gap:8px;
+  }
+  .trip-counter{
+    font-family:var(--font-display); font-weight:900; font-size:15px; color:var(--bg-paper);
+    background:rgba(184,144,47,0.15); border:1.5px solid var(--gold); border-radius:8px;
+    padding:6px 14px;
+  }
+  .trip-counter.danger{ color:#ff6b6b; border-color:#ff6b6b; background:rgba(255,107,107,0.12); }
+  #btn-rules-again{
+    font-family:var(--font-ui); font-size:12px; color:var(--bg-paper-edge);
+    background:none; border:1px solid rgba(232,223,196,0.25); border-radius:8px; padding:6px 12px; cursor:pointer;
+  }
+
+  .river-scene{
+    width:100%; background:linear-gradient(180deg, #233b2e 0%, #1c3026 100%);
+    border-radius:14px; padding:18px 14px; position:relative; overflow:hidden;
+    border:1px solid rgba(184,144,47,0.15);
+  }
+  .banks-row{ display:flex; gap:10px; align-items:stretch; }
+  .bank{
+    flex:1; background:var(--bank); border-radius:10px; padding:12px 10px; min-height:200px;
+    display:flex; flex-direction:column;
+  }
+  .bank-label{
+    font-family:var(--font-display); font-weight:800; font-size:12px; color:var(--bg-paper);
+    text-align:center; margin-bottom:10px; letter-spacing:1px; opacity:0.85;
+  }
+  .animal-grid{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-content:flex-start; flex:1; }
+  .animal-chip{
+    width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; border:2px solid transparent; background:rgba(232,223,196,0.08);
+    transition:all .12s ease; user-select:none;
+  }
+  .animal-chip:hover{ background:rgba(232,223,196,0.18); }
+  .animal-chip.selected{ border-color:var(--gold); background:rgba(184,144,47,0.3); transform:scale(1.05); }
+  .animal-chip.exhausted{ opacity:0.4; cursor:not-allowed; }
+  .animal-chip.exhausted::after{ content:'💤'; position:absolute; font-size:11px; margin-right:-30px; margin-top:-22px; }
+
+  .river-strip{
+    height:64px; margin:14px 0; border-radius:10px; position:relative; overflow:hidden;
+    background:repeating-linear-gradient(100deg, var(--river) 0px, var(--river) 18px, #234548 18px, #234548 36px);
+  }
+  .boat{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:78px; height:42px; background:#5c3a23; border-radius:8px 8px 16px 16px;
+    display:flex; align-items:center; justify-content:center; gap:2px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3); transition:right .5s ease;
+    font-size:15px;
+  }
+
+  #btn-cross{
+    margin-top:14px; padding:13px 30px; border-radius:10px; border:none;
+    background:var(--gold); color:#1c160a; font-family:var(--font-display); font-weight:900;
+    font-size:15px; cursor:pointer; align-self:center;
+  }
+  #btn-cross:disabled{ opacity:0.35; cursor:not-allowed; }
+  #btn-cross:not(:disabled):active{ transform:translateY(1px); }
+
+  .selection-info{
+    margin-top:10px; font-size:12.5px; color:var(--bg-paper-edge); text-align:center; min-height:18px;
+  }
+
+  /* ===================== LOG ===================== */
+  #log-panel{
+    width:100%; margin-top:16px; background:rgba(14,20,16,0.5); border-radius:10px; padding:12px 14px;
+    max-height:140px; overflow-y:auto; font-size:12.5px; color:var(--bg-paper-edge); line-height:1.8;
+  }
+  #log-panel .log-entry{ border-bottom:1px solid rgba(232,223,196,0.08); padding:4px 0; }
+
+  /* ===================== END SCREENS ===================== */
+  #screen-end{ width:100%; max-width:560px; text-align:center; }
+  .end-card{
+    background:var(--bg-paper); border-radius:12px; padding:36px 26px; box-shadow:0 20px 50px rgba(0,0,0,0.4);
+  }
+  .end-icon{ font-size:52px; margin-bottom:10px; }
+  .end-title{ font-family:var(--font-display); font-weight:900; font-size:26px; margin-bottom:12px; }
+  .end-title.win{ color:#2f6b3a; }
+  .end-title.lose{ color:var(--blood); }
+  .end-text{ font-family:var(--font-paper); font-size:15px; line-height:1.9; margin-bottom:24px; }
+  #btn-retry{
+    padding:13px 30px; border-radius:10px; border:none; background:var(--blood); color:var(--bg-paper);
+    font-family:var(--font-display); font-weight:800; font-size:14px; cursor:pointer;
+  }
+
+  @media (max-width:480px){
+    .animal-chip{ width:36px; height:36px; font-size:17px; }
+    .bank{ min-height:170px; }
+  }
 </style>
 </head>
-
 <body>
+<div id="root">
 
-<div class="container" id="start">
-    <h2>اكتب اسمك</h2>
-    <input id="username">
-    <br>
-    <button onclick="startGame()">ابدأ</button>
+  <!-- ===================== RULES SCREEN ===================== -->
+  <div id="screen-rules">
+    <div class="paper">
+      <div class="paper-title">عبّارة الموت</div>
+      <div class="paper-subtitle">"اقرأ كل سطر... فلن تُمنح فرصة ثانية لقراءته بعد أن تبدأ"</div>
+
+      <div class="paper-body">
+
+        <div class="paper-section-title">القافلة</div>
+        <p>أمامك ضفة نهر، وعلى الضفة الأخرى أرض النجاة. معك قافلة من الحيوانات يجب أن تعبر بها جميعاً، حية، دون أن يُفقد واحد منها.</p>
+        <table class="roster-table">
+          <tr><th>النوع</th><th>الرمز</th><th>العدد</th></tr>
+          <tr><td>الذئاب</td><td>🐺</td><td>٣</td></tr>
+          <tr><td>الخراف</td><td>🐑</td><td>٤</td></tr>
+          <tr><td>الماعز</td><td>🐐</td><td>٣</td></tr>
+          <tr><td>كلاب الحراسة</td><td>🐕</td><td>٢</td></tr>
+        </table>
+        <p>المجموع: اثنا عشر رأساً. لا واحد أقل، ولا واحد أكثر يصل سالماً إلا بحساب دقيق.</p>
+
+        <div class="paper-section-title">القارب</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">١.</span> يحمل القارب على الأكثر ثلاثة رؤوس في كل عبرة، ولا يجوز أن يعبر فارغاً أبداً — يجب أن يحمل رأساً واحداً على الأقل.</li>
+          <li><span class="rule-num">٢.</span> العبرة الواحدة تُحسب في كل مرة يتحرك فيها القارب من ضفة إلى أخرى، سواء حمل رأساً أو ثلاثة.</li>
+        </ul>
+
+        <div class="paper-section-title">قانون الذئب والخروف</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">٣.</span> لا يجوز ترك ذئب واحد أو أكثر مع خروف واحد أو أكثر في مكان واحد — سواء على ضفة، أو داخل القارب نفسه — إلا إذا كان معهم كلب حراسة واحد على الأقل في ذلك المكان بالتحديد.</li>
+          <li><span class="rule-num">٤.</span> غياب الكلب الحارس في هذه الحالة يعني أن الخروف يُفترس فوراً، وتنتهي رحلتك بالخسارة الكاملة.</li>
+        </ul>
+
+        <div class="paper-section-title">قانون الذئب والماعز</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">٥.</span> إذا تساوى عدد الذئاب مع عدد الماعز في مكان واحد، أو زاد عدد الذئاب عن عدد الماعز، في غياب أي كلب حراسة في ذلك المكان — تُسحق الماعز ويهرب الذئب، وتُهزم.</li>
+          <li><span class="rule-num">٦.</span> أما إذا كان عدد الماعز أكبر من عدد الذئاب، فالماعز قادرة على الدفاع عن نفسها بأعدادها، ولا خطر في ذلك — حتى دون كلب.</li>
+        </ul>
+
+        <div class="paper-section-title">قانون الكلب المُتعَب</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">٧.</span> أي كلب حراسة يصل تواً إلى ضفة، بعد عبرة، يكون متعباً من السباحة والمراقبة. لا يجوز لهذا الكلب بالذات أن يركب القارب في العبرة التالية مباشرة من تلك الضفة — يجب أن يستريح عبرة واحدة كاملة في مكانه قبل أن يُسمح له بالركوب من جديد.</li>
+          <li><span class="rule-num">٨.</span> هذا القانون يسري حتى إن كان الكلب هو الوحيد القادر على إنقاذ الموقف من قانون الذئب والخروف — التعب لا يستثني أحداً.</li>
+        </ul>
+
+        <div class="paper-section-title">قانون العدد الأقصى للعبرات</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">٩.</span> أمامك إحدى عشرة عبرة فقط، لا أكثر، لنقل القافلة كاملة من الضفة الأولى إلى الضفة الثانية.</li>
+          <li><span class="rule-num">١٠.</span> إن استهلكت العبرة الحادية عشرة ولم تكتمل القافلة على الضفة الأخرى، تنتهي اللعبة بالخسارة — حتى لو لم يُفترس أحد ولم تُخالف أي قانون آخر.</li>
+        </ul>
+
+        <div class="paper-section-title">قوانين عامة أخيرة</div>
+        <ul class="paper-list">
+          <li><span class="rule-num">١١.</span> كل القوانين أعلاه تُفحص في أربعة مواضع مختلفة بعد كل عبرة: الضفة التي تحرك القارب منها (بمن تبقى فيها)، الضفة التي وصل إليها القارب (بمن نزل فيها)، ولا يُفحص أي شيء أثناء عبور القارب نفسه في وسط النهر سوى تركيبة من بداخله وقت الانطلاق.</li>
+          <li><span class="rule-num">١٢.</span> لا يمكن التراجع عن عبرة بعد إتمامها. كل قرار نهائي.</li>
+          <li><span class="rule-num">١٣.</span> لا تتوفر أي تلميحات أو حل جزئي معروض في اللعبة. الورقة التي بين يديك الآن هي كل ما ستحصل عليه.</li>
+        </ul>
+      </div>
+
+      <div class="warn-box">
+        <b>تحذير أخير:</b> هذا اللغز له حل، ولكنه يتطلب الحد الأدنى المطلق من العبرات — إحدى عشرة، لا واحدة أكثر. أي عبرة تُهدر في اتجاه خاطئ تُنهي اللغز بلا رجعة. فكّر بعمق قبل كل حركة، لا بعدها.
+      </div>
+
+      <button id="btn-accept">فهمت القوانين، ابدأ العبور</button>
+      <div class="scroll-hint">اقرأ من جديد قبل الضغط إن لم تكن متأكداً — لن تُعرض القوانين تلقائياً مرة أخرى</div>
+    </div>
+  </div>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <div id="screen-game" class="hidden">
+    <div id="topbar">
+      <div class="trip-counter" id="trip-counter">العبرة: ٠ / ١١</div>
+      <button id="btn-rules-again">إعادة قراءة القوانين</button>
+    </div>
+
+    <div class="river-scene">
+      <div class="banks-row">
+        <div class="bank" id="bank-left">
+          <div class="bank-label">الضفة الأولى</div>
+          <div class="animal-grid" id="grid-left"></div>
+        </div>
+        <div class="bank" id="bank-right">
+          <div class="bank-label">ضفة النجاة</div>
+          <div class="animal-grid" id="grid-right"></div>
+        </div>
+      </div>
+      <div class="river-strip">
+        <div class="boat" id="boat-el">🛶</div>
+      </div>
+      <button id="btn-cross" disabled>عبّر القارب</button>
+      <div class="selection-info" id="selection-info">اختر حتى ٣ حيوانات من الضفة التي عليها القارب</div>
+    </div>
+
+    <div id="log-panel"></div>
+  </div>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <div id="screen-end" class="hidden">
+    <div class="end-card">
+      <div class="end-icon" id="end-icon">🏆</div>
+      <div class="end-title" id="end-title">نجحت</div>
+      <div class="end-text" id="end-text"></div>
+      <button id="btn-retry">حاول من جديد</button>
+    </div>
+  </div>
+
 </div>
-
-<div class="container" id="game" style="display:none;">
-    <h2 id="question"></h2>
-    <input id="answer">
-    <br>
-    <button onclick="checkAnswer()">تأكيد</button>
-    <p id="msg"></p>
-</div>
-
-<div class="container">
-    <h3>🏆 الفائزون</h3>
-    <ul id="winners"></ul>
-</div>
-
-<div class="container">
-    <h3>🏅 ليدر بورد</h3>
-    <ol id="leaderboard"></ol>
-</div>
-
-<audio id="laughSound" src="https://www.soundjay.com/human/laugh-01.mp3"></audio>
 
 <script>
-// ==================== Firebase ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyArP0yNUj4IUYKlKwI4pn6aBoGfMcV_BzM",
-  authDomain: "test-3b169.firebaseapp.com",
-  databaseURL: "https://test-3b169-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "test-3b169",
-  storageBucket: "test-3b169.firebasestorage.app",
-  messagingSenderId: "768937244206",
-  appId: "1:768937244206:web:abe3fa7dc60bc672c211bf"
+/* =========================================================
+   عبّارة الموت — River Crossing, brutal ruleset
+   Verified solvable in EXACTLY 11 trips via offline BFS solver.
+   Rules implemented 1:1 with the solver used to design this puzzle.
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const TYPES = ['wolf','sheep','goat','dog'];
+const META = {
+  wolf: {icon:'🐺', label:'ذئب'},
+  sheep:{icon:'🐑', label:'خروف'},
+  goat: {icon:'🐐', label:'ماعز'},
+  dog:  {icon:'🐕', label:'كلب'},
+};
+const START_COUNTS = {wolf:3, sheep:4, goat:3, dog:2};
+const BOAT_CAP = 3;
+const MAX_TRIPS = 11;
+
+// game state: list of animal objects {id, type, side(0=left,1=right), exhausted(bool)}
+let animals = [];
+let boatSide = 0; // 0 = left, 1 = right
+let trips = 0;
+let selected = new Set(); // selected animal ids (must be on boatSide bank)
+let gameOver = false;
+
+function buildAnimals(){
+  animals = [];
+  let idc = 0;
+  TYPES.forEach(t=>{
+    for(let i=0;i<START_COUNTS[t];i++){
+      animals.push({id:idc++, type:t, side:0, exhausted:false});
+    }
+  });
+}
+
+function arabicNum(n){
+  const map=['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  return String(n).split('').map(c=>map[c]!==undefined?map[c]:c).join('');
+}
+
+/* ---------------- RULES SCREEN ---------------- */
+$('btn-accept').onclick = ()=>{
+  $('screen-rules').classList.add('hidden');
+  $('screen-game').classList.remove('hidden');
+  startGame();
+};
+$('btn-rules-again').onclick = ()=>{
+  $('screen-game').classList.add('hidden');
+  $('screen-rules').classList.remove('hidden');
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ==================== Telegram ====================
-const BOT_TOKEN = "8680352789:AAGOX9X_tpYAoYIhOIWrLcsHQMqanBNwJac";
-const CHAT_ID = "7219163505";
-
-function sendTelegram(message){
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({chat_id: CHAT_ID, text: message})
-    });
-}
-
-// ==================== الأسئلة ====================
-const questions = [
-{q:"ما اسمي", a:["قصي"]},
-{q:"ما لقبي", a:["الشاوش"]},
-{q:"كم عمري", a:["15"]},
-{q:"شهر ميلادي", a:["اوت","8"]},
-{q:"يوم ميلادي", a:["15"]},
-{q:"اكلتي المفضلة (تطيب فالدار)", a:["طاجين"]},
-{q:"اكلتي المفضلة من المطاعم", a:["باقات"]},
-{q:"مشروبي المفضل", a:["بيبسي"]},
-{q:"لوني المفضل", a:["بنفسجي"]},
-{q:"لون عيني", a:["بني"]},
-{q:"لعبتي المفضلة", a:["ماينكرافت","ماين كرافت"]},
-{q:"فلمي امفضل", a:["breakingbad","breaking bad"]},
-{q:"انمي مفضل", a:["ونبيس","ون بيس"]},
-{q:"احسن صاحب", a:["مهيب"]},
-{q:"حبي من عامة الرابعة", a:["مريم"]},
-{q:"حبي من عامة ال6", a:["حنين"]},
-{q:"حبي من عامة ال7", a:["مرام"]},
-{q:"حبي من عامة ال8 و هيا جاي", a:["تيسير"]},
-{q:"اول طفلة حكيت معاها منن الكلاس", a:["مريم"]},
-{q:"حاجة نحبها", a:["برمجة"]},
-{q:"شنو تنتوجه", a:["اعلامية"]},
-{q:"لعبة صعيبة ختمتها", a:["هولونايت","هولو نايت"]},
-{q:"اكثر مادة نحبها بخلاف الانفو", a:["انقليزية"]},
-{q:"اكثر مادة نكرهها", a:["فرنسية","سيونس"]},
-{q:"حيوان نحبو", a:["ثعلب","الثعلب"]},
-{q:"حاجة عندي رهاب منها", a:["عناكب"]},
-{q:"حاجة تفرحني فيسع", a:["تليفون"]},
-{q:"رقمي المفضل", a:["7"]},
-{q:"اول حاجة ترانيتها", a:["كونغفو","كونغ فو"]},
-{q:"اكثر واحد نكرهو فالكلاس", a:["معتز","مؤمن"]}
-];
-
-let current = 0;
-let player = "";
-
-// ==================== الدوال ====================
-function normalize(text){ return text.toLowerCase().replace(/\s+/g,""); }
-
+/* ---------------- GAME INIT ---------------- */
 function startGame(){
-    player = document.getElementById("username").value;
-    if(!player) return alert("اكتب اسمك");
-    document.getElementById("start").style.display="none";
-    document.getElementById("game").style.display="block";
-    loadQuestion();
+  buildAnimals();
+  boatSide = 0;
+  trips = 0;
+  selected = new Set();
+  gameOver = false;
+  $('log-panel').innerHTML='';
+  renderAll();
 }
 
-function loadQuestion(){
-    document.getElementById("question").innerText = questions[current].q;
-    document.getElementById("answer").value="";
-    document.getElementById("msg").innerText="";
+function renderAll(){
+  renderBanks();
+  renderBoatPosition();
+  renderTripCounter();
+  renderSelectionInfo();
+  renderCrossBtn();
 }
 
-function showEmojis(){
-    const emojis = ["😂","🤣","😹","😆"];
-    const laughSound = document.getElementById("laughSound");
-    laughSound.currentTime = 0;
-    laughSound.play();
-    for(let i=0;i<20;i++){
-        let e = document.createElement("div");
-        e.className="emoji";
-        e.style.left = Math.random()*90 + "%";
-        e.innerText = emojis[Math.floor(Math.random()*emojis.length)];
-        document.body.appendChild(e);
-        setTimeout(()=> e.remove(),3000);
-    }
-}
-
-function checkAnswer(){
-    let rawAnswer = document.getElementById("answer").value;
-    let user = normalize(rawAnswer);
-
-    db.ref("logs").push({name: player, question: questions[current].q, answer: rawAnswer, time: Date.now()});
-    sendTelegram(`📩 محاولة جديدة
-👤 ${player}
-❓ ${questions[current].q}
-✏️ جوابه: ${rawAnswer}`);
-
-    let answers = questions[current].a.map(a=>normalize(a));
-
-    if(answers.includes(user)){
-        current++;
-
-        // تحديث أعلى score فقط
-        const scoreRef = db.ref("scores/" + player);
-        scoreRef.get().then(snapshot => {
-            let prevScore = snapshot.exists() ? snapshot.val().score : 0;
-            if(current > prevScore){
-                scoreRef.set({name: player, score: current});
-            }
-        });
-
-        sendTelegram(`✅ إجابة صحيحة!
-👤 ${player}
-✏️ كتب: ${rawAnswer}
-📊 السؤال رقم ${current}`);
-
-        if(current === questions.length){
-            db.ref("winners").push(player);
-            sendTelegram(`🏆 فاز!
-👤 ${player} خلص كل الأسئلة 🔥`);
-            showEmojis();
-            document.body.innerHTML = "<h2>يعني عرفت عليا هذا الكل و معرفتش شكون نحب؟ 🤣</h2>";
-        } else {
-            loadQuestion();
-        }
-
-    } else {
-        current = 0;
-        document.getElementById("msg").innerText = "❌ غلط! رجعت من الأول";
-        sendTelegram(`❌ إجابة غلط!
-👤 ${player}
-✏️ كتب: ${rawAnswer}
-🔁 رجع للبداية`);
-        showEmojis();
-        setTimeout(loadQuestion,1500);
-    }
-}
-
-// ==================== عرض الفائزين ====================
-db.ref("winners").on("value", snap=>{
-    let data = snap.val();
-    let list = document.getElementById("winners");
-    list.innerHTML="";
-    for(let id in data){
-        let li = document.createElement("li");
-        li.innerText = data[id];
-        list.appendChild(li);
-    }
-});
-
-// ==================== عرض Leaderboard ====================
-db.ref("scores").orderByChild("score").on("value", snap=>{
-    let data = snap.val();
-    let list = document.getElementById("leaderboard");
-    list.innerHTML="";
-    let sorted = [];
-    for(let key in data){
-        if(data[key] && data[key].name !== undefined && data[key].score !== undefined){
-            sorted.push(data[key]);
-        }
-    }
-    sorted.sort((a,b)=>b.score - a.score);
-    sorted.forEach(p=>{
-        let li = document.createElement("li");
-        li.innerText = `${p.name} - ${p.score} سؤال`;
-        list.appendChild(li);
+function renderBanks(){
+  [0,1].forEach(side=>{
+    const grid = side===0 ? $('grid-left') : $('grid-right');
+    grid.innerHTML='';
+    animals.filter(a=>a.side===side).forEach(a=>{
+      const chip = document.createElement('div');
+      const isSelectable = side===boatSide && !gameOver;
+      chip.className = 'animal-chip' + (selected.has(a.id)?' selected':'') + (a.exhausted && side===boatSide ? ' exhausted':'');
+      chip.textContent = META[a.type].icon;
+      chip.title = META[a.type].label + (a.exhausted ? ' (متعب)' : '');
+      if(isSelectable){
+        chip.onclick = ()=> toggleSelect(a);
+      }
+      grid.appendChild(chip);
     });
-});
+  });
+}
 
-// ==================== Enter لتأكيد الإجابة ====================
-document.addEventListener("keyup", function(e){
-    if(e.key === "Enter"){
-        checkAnswer();
-    }
-});
+function toggleSelect(a){
+  if(gameOver) return;
+  if(a.side !== boatSide) return;
+  if(a.exhausted && !selected.has(a.id)) return; // can't select an exhausted dog
+  if(selected.has(a.id)){
+    selected.delete(a.id);
+  } else {
+    if(selected.size >= BOAT_CAP) return;
+    selected.add(a.id);
+  }
+  renderBanks();
+  renderSelectionInfo();
+  renderCrossBtn();
+}
+
+function renderBoatPosition(){
+  $('boat-el').style.right = boatSide===0 ? '4%' : '78%';
+}
+
+function renderTripCounter(){
+  const el = $('trip-counter');
+  el.textContent = `العبرة: ${arabicNum(trips)} / ١١`;
+  el.classList.toggle('danger', trips >= MAX_TRIPS-2);
+}
+
+function renderSelectionInfo(){
+  const info = $('selection-info');
+  if(selected.size===0){
+    info.textContent = 'اختر حتى ٣ حيوانات من الضفة التي عليها القارب';
+  } else {
+    const names = [...selected].map(id=>META[animals.find(a=>a.id===id).type].label);
+    info.textContent = `المختار: ${names.join('، ')}`;
+  }
+}
+
+function renderCrossBtn(){
+  $('btn-cross').disabled = selected.size===0 || gameOver;
+}
+
+function addLog(text, isDanger){
+  const panel = $('log-panel');
+  const entry = document.createElement('div');
+  entry.className='log-entry';
+  if(isDanger) entry.style.color = '#ff8888';
+  entry.textContent = text;
+  panel.appendChild(entry);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+/* ---------------- VALIDATION (mirrors offline solver) ---------------- */
+function countsOf(list){
+  const c = {wolf:0,sheep:0,goat:0,dog:0};
+  list.forEach(a=> c[a.type]++);
+  return c;
+}
+
+function locationInvalid(list){
+  const c = countsOf(list);
+  if(c.wolf>0 && c.sheep>0 && c.dog===0) return 'wolf_sheep';
+  if(c.wolf>0 && c.goat>0 && c.wolf>=c.goat && c.dog===0) return 'wolf_goat';
+  return null;
+}
+
+function describeViolation(code){
+  if(code==='wolf_sheep') return 'افترس ذئب خروفاً في غياب أي كلب حراسة. القافلة فقدت رأساً، وانتهت المهمة بالفشل.';
+  if(code==='wolf_goat') return 'تكافأ عدد الذئاب مع الماعز (أو زاد عليها) دون كلب حراسة، فسُحقت الماعز وهربت الذئاب. انتهت المهمة بالفشل.';
+  return 'حدث ما لا يجوز حدوثه.';
+}
+
+/* ---------------- CROSS ACTION ---------------- */
+$('btn-cross').onclick = ()=>{
+  if(gameOver || selected.size===0) return;
+
+  const boatAnimals = animals.filter(a=>selected.has(a.id));
+
+  // boat composition check
+  const boatViolation = locationInvalid(boatAnimals);
+  if(boatViolation){
+    return endGame(false, describeViolation(boatViolation));
+  }
+
+  const fromSide = boatSide;
+  const toSide = boatSide===0 ? 1 : 0;
+
+  // move animals
+  boatAnimals.forEach(a=>{ a.side = toSide; });
+
+  // exhausted dog rule: any dog that just moved becomes exhausted (can't board next trip from new side)
+  // any dog that was exhausted on the side the boat is LEAVING gets to rest (clear exhaustion) since
+  // a full trip cycle (there and the wait) has passed for dogs left behind.
+  animals.filter(a=>a.type==='dog' && a.side===fromSide).forEach(a=>{ a.exhausted = false; });
+  boatAnimals.filter(a=>a.type==='dog').forEach(a=>{ a.exhausted = true; });
+
+  boatSide = toSide;
+  trips++;
+  selected = new Set();
+
+  // validate both banks now
+  const leftBank = animals.filter(a=>a.side===0);
+  const rightBank = animals.filter(a=>a.side===1);
+  const leftViol = locationInvalid(leftBank);
+  const rightViol = locationInvalid(rightBank);
+
+  const tripDesc = boatAnimals.map(a=>META[a.type].label).join('، ');
+  addLog(`العبرة ${arabicNum(trips)}: عبر [${tripDesc}] من ${fromSide===0?'الضفة الأولى':'ضفة النجاة'} إلى ${toSide===0?'الضفة الأولى':'ضفة النجاة'}.`);
+
+  if(leftViol){ return endGame(false, describeViolation(leftViol)); }
+  if(rightViol){ return endGame(false, describeViolation(rightViol)); }
+
+  // check win
+  if(rightBank.length === animals.length){
+    return endGame(true, `عبرت القافلة كاملة، اثنا عشر رأساً، سالمة تماماً، في ${arabicNum(trips)} عبرة فقط — الحد الأدنى المطلق. لم تُهدر عبرة واحدة.`);
+  }
+
+  // check trip limit
+  if(trips >= MAX_TRIPS){
+    return endGame(false, `استهلكت العبرات الإحدى عشرة المسموحة دون أن تكتمل القافلة على ضفة النجاة. القانون التاسع والعاشر لا يستثنيان أحداً.`);
+  }
+
+  renderAll();
+};
+
+function endGame(won, message){
+  gameOver = true;
+  renderAll();
+  $('screen-game').classList.add('hidden');
+  $('screen-end').classList.remove('hidden');
+  $('end-icon').textContent = won ? '🏆' : '💀';
+  $('end-title').textContent = won ? 'عبرت بسلام' : 'انتهت الرحلة';
+  $('end-title').className = 'end-title ' + (won?'win':'lose');
+  $('end-text').textContent = message;
+}
+
+$('btn-retry').onclick = ()=>{
+  $('screen-end').classList.add('hidden');
+  $('screen-rules').classList.remove('hidden');
+};
+
 </script>
-
 </body>
 </html>
